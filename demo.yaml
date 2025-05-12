@@ -1,0 +1,115 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-website-configmap
+  namespace: demo
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                background-color: #f0f0f0;
+            }
+            .card {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+            }
+            .card h1 {
+                margin: 0;
+                font-size: 24px;
+            }
+            .card p {
+                margin: 10px 0;
+                color: #555;
+            }
+            .card a {
+                display: inline-block;
+                margin-top: 10px;
+                padding: 10px 20px;
+                border-radius: 5px;
+                background-color: #007BFF;
+                color: #fff;
+                text-decoration: none;
+            }
+            .card a:hover {
+                background-color: #0056b3;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>DEMO - Welome to your K8S-Demo-Website!</h1>
+            <p>This is a HTML and CSS example website.</p>
+            <p>Used for demonstration purposes.</p>
+            <a href="https://www.wikipedia.com">Visit Wikipedia</a>
+        </div>
+    </body>
+    </html>
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: demo-website
+  name: demo-website-service
+  namespace: demo
+spec:
+  type: NodePort
+  ports:
+  - name: demo-http
+    port: 8080
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: demo-website
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: demo-website
+  name: demo-website
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-website
+  template:
+    metadata:
+      labels:
+        app: demo-website
+        name: demo-website
+    spec:
+      containers:
+        - name: demo-website-nginx
+          image: docker.io/nginx:1.28.0
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/index.html
+              name: demo-website
+              subPath: index.html
+      volumes:
+        - name: demo-website
+          configMap:
+            name: demo-website-configmap
