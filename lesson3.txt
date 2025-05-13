@@ -1,0 +1,61 @@
+1. Erstellen Sie eine neue Datei configmap.yaml mit folgendem Inhalt:
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: demo-nginx-configmap
+  namespace: ihr-name
+data:
+  default.conf: |
+    server {
+      listen 8080;
+
+      root /usr/share/nginx/html;
+      index index.htm index.html;
+
+      location / {
+        autoindex on;
+        try_files $uri $uri/ =404;
+      }
+    }
+
+Applizieren Sie diese mit oc apply -f configmap.yaml
+
+2. Editieren Sie die Datei demo.yaml:
+
+3. Ändern Sie den Port der Ressource Service:
+
+von targetPort: 80
+   auf targetPort: 8080
+
+4. Gehen Sie weiter zur Ressource Deployment
+
+5. Passen Sie die Ressource Deployment an:
+...
+    spec:
+      containers:
+        ...
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            ...
+            - mountPath: /etc/nginx/conf.d/default.conf
+              name: nginx-cfg
+              subPath: default.conf
+            - mountPath: /var/cache/nginx
+              name: nginx-cache
+            - mountPath: /run
+              name: nginx-run
+      volumes:
+        ...
+        - name: nginx-cfg
+          configMap:
+            name: demo-nginx-configmap
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+
+6. Applizieren Sie Ihre Änderungen mit 
+
+  oc apply -f demo.yaml
